@@ -10,13 +10,13 @@ PyPackets focuses on spoofing sent packets.
 The current recommended way to install pypackets is from source.  
 ### From source
 ```
-git clone https://github.com/sharik-game/pypackets.git
+git clone https://github.com/vrazor08/pypackets.git
 cd pypackets
 python3 -m pip install -e .
 ```
 ### Direct (main)
 ```
-python3 -m pip install git+https://github.com/sharik-game/pypackets.git
+python3 -m pip install git+https://github.com/vrazor08/pypackets.git
 ```
 
 ## TODO:
