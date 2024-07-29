@@ -1,0 +1,40 @@
+indent-width = 2
+line-length = 150
+
+lint.ignore = [
+  "E702",   # multiple-statements-on-one-line-semicolon
+  "E701",
+  "E703", # useless-semicolon
+  "E731",   
+  "E112",
+  "E402",
+]
+
+exclude = [
+  ".bzr",
+  ".direnv",
+  ".eggs",
+  ".git",
+  ".git-rewrite",
+  ".hg",
+  ".ipynb_checkpoints",
+  ".mypy_cache",
+  ".nox",
+  ".pants.d",
+  ".pyenv",
+  ".pytest_cache",
+  ".pytype",
+  ".ruff_cache",
+  ".svn",
+  ".tox",
+  ".venv",
+  ".vscode",
+  "__pypackages__",
+  "_build",
+  "buck-out",
+  "build",
+  "dist",
+  "node_modules",
+  "site-packages",
+  "venv",
+]
