@@ -46,15 +46,17 @@ class Packet:
     pkt += "]"
     return pkt
 
-  def _create_pkts_buf(self, count: int) -> bytearray:
+  def _create_pkts_buf(self, count: int, ret_time: bool = False) -> bytearray | tuple[bytearray, float]:
+    start = time.perf_counter()
     buf = bytearray(count*self.pkt_len)
     offset = 0
     for i in range(count): offset = self.to_buffer(buf, offset)
-    return buf
+    if not ret_time: return buf
+    return buf, time.perf_counter() - start
 
   def send_pkts(self, fd: socket, limit: Limitation,
                 send_func: Optional[SendFunc] = None, send_mode: Optional[SendMode] = None, 
-                **kwargc) -> int:
+                **kwargc) -> int | tuple[int, float]:
     if not send_func: send_func = SockDefaultSendFuncs[self.fd_type][0]
     assert(send_func and "not implemented")
     if not send_mode: send_mode = SockDefaultSendFuncs[self.fd_type][1]
@@ -74,6 +76,16 @@ class Packet:
           s += send_func(fd, self._create_pkts_buf(self.pkts_max), **kwargc)
           if time.perf_counter() - start >= limit.by_time: raise TimeoutError
       except (TimeoutError, KeyboardInterrupt): return s
+    elif limit.bench:
+      s, t = 0, 0
+      try:
+        start = time.perf_counter()
+        while True:
+          ans = self._create_pkts_buf(self.pkts_max, ret_time=True)
+          t += ans[1]
+          s += send_func(fd, ans[0], **kwargc)
+          if time.perf_counter() - start >= limit.bench: raise TimeoutError
+      except (TimeoutError, KeyboardInterrupt): return s, t
     elif limit.forever:
       s = 0
       while True:

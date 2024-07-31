@@ -65,7 +65,7 @@ class CLI:
       case None: 
         ip_hdr = IPHeader(dst_ip=socket.inet_aton(dst_ip), src_ip=socket.inet_aton(IPHeader.get_src_ip(iface)))
         ip = IPLayer(ip_hdr)
-        print(f"\033[93;1mWarning:\033[0m using ip: {IPHeader.get_src_ip(iface)} as your ip", file=sys.stderr)
+        print(f"\033[93;1mWarning: using ip: {IPHeader.get_src_ip(iface)} as your ip\033[0m", file=sys.stderr)
       case _ as _ip: 
         ip_hdr = IPHeader(dst_ip=socket.inet_aton(dst_ip), src_ip=socket.inet_aton(_ip))
         ip = IPLayer(ip_hdr)
@@ -98,7 +98,7 @@ class CLI:
       case "packet_raw":
         checksum = Checksum(socket.inet_aton(dst_ip))
         src_mac, dst_mac = EthernetHeader.get_src_mac(iface), EthernetHeader.get_dst_mac(iface)
-        print(f"\033[93;1mWarning:\033[0m use interface: {iface}. src_mac: {src_mac}, dst_mac: {dst_mac}", file=sys.stderr)
+        print(f"\033[93;1mWarning: use interface: {iface}. src_mac: {src_mac}, dst_mac: {dst_mac}\033[0m", file=sys.stderr)
         eth_hdr: EthernetHeader = EthernetHeader(EthernetHeader._mac_to_bytes(dst_mac), EthernetHeader._mac_to_bytes(src_mac))
         eth = EthernetLayer(eth_hdr)
         pkts_max = sendmmsg.get_max_sendmmsg_pkts_count()

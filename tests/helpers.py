@@ -17,7 +17,7 @@ from pypackets.benchmark.benchmark import Limitation
 TestDir = Path(__file__).resolve().parent
 SleepTime = 0.4 # TODO: don't do it by time maybe by signal from go
 
-def sniff_run(dst_ip: str, iface: str, spoof_fields: str = "", pkts_count: int = 5, ):
+def sniff_run(dst_ip: str, iface: str, spoof_fields: str = "", pkts_count: int = 5):
   spoof_fields = spoof_fields.replace(" ", "")
   sniffer_proc = subprocess.Popen(["./sniff/sniff",  "-dst_ip", dst_ip, "-i", iface, "-sf", spoof_fields, "-pkts_count", str(pkts_count)], cwd=TestDir)
   return sniffer_proc
