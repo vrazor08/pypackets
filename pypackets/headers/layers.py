@@ -1,7 +1,7 @@
-from enum import Enum
+from enum import IntEnum
 import socket
 
-class Layer(Enum):
+class Layer(IntEnum):
   Physical: int = 1
   DataLink: int = 2
   Network: int = 3

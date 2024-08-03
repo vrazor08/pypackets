@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import time
 from typing import Optional
 
 from prettytable import PrettyTable
@@ -22,6 +23,7 @@ def bench_test(bench_count: int, mul_step: int, pkts_size: int, func, **kwargc) 
     mbps = int(buffer_size / by_time / 1_000_000)
     rows.append([by_time, pkts_count, buffer_size//8//1024, pps, mbps, round(creation_time, 5)])
     by_time *= mul_step
+    time.sleep(0.2)
   table = PrettyTable(title=f"Sending bench for {pkts_size} bytes packet")
   table.field_names = ["Seconds", "Count", "Buf size(KB)", "pkts/s", "Mb/s", "Buf creation(s)"]
   table.add_rows(rows)

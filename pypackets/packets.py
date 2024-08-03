@@ -92,5 +92,5 @@ class Packet:
         try: 
           s += send_func(fd, self._create_pkts_buf(self.pkts_max), **kwargc)
         except KeyboardInterrupt: return s
-    else: raise ValueError(f"Unknown limit: {limit}")
+    else: raise AttributeError(f"Unknown limit: {limit}")
 

@@ -41,8 +41,8 @@ class IPLayer:
     if pack_option, pack into pack_option[0] with pack_option[1] offset
     """
     struct.pack_into(self.pack_string, buf, offset, self.ip_hdr.ihl_ver, self.ip_hdr.tos, 
-                    self.ip_hdr.tot_len, self.ip_hdr._id, self.ip_hdr.frag_off, self.ip_hdr.ttl, self.ip_hdr.proto, 
-                    check, self.ip_hdr.src_ip, self.ip_hdr.dst_ip
+                    self.ip_hdr.tot_len, self.ip_hdr._id, self.ip_hdr.frag_off, self.ip_hdr.ttl, 
+                    self.ip_hdr.proto, check, self.ip_hdr.src_ip, self.ip_hdr.dst_ip
     )
 
   def to_buffer(self, buf: bytearray, offset: int) -> int:
@@ -64,5 +64,5 @@ class IPLayer:
     self.pack_hdr(0, buf, offset)
     if self.culc_check:
       check = self.culc_check(buf[offset:end_size])
-      self.pack_hdr(check, buf, offset)
+      struct.pack_into("!H", buf, end_size-10, check) # -8(dst_ip, src_ip), -2(checksum)
     return end_size

@@ -68,5 +68,5 @@ class TCPLayer:
     if self.culc_check:
       src_ip = buf[offset-8:offset-4]
       check = self.culc_check(buf[offset:end_size], src_ip)
-      self.pack_hdr(check, buf, offset)
+      struct.pack_into("!H", buf, end_size-4, check)
     return end_size

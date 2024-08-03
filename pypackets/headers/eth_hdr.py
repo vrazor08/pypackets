@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 import ipaddress
+from socket import ETHERTYPE_IP
 import struct
 
 from getmac import get_mac_address
@@ -11,7 +12,7 @@ from pypackets.headers.layers import Layer
 class EthernetHeader:
   dst_mac: bytes
   src_mac: bytes
-  ethertype: int = 0x0800
+  ethertype: int = ETHERTYPE_IP
   
   @staticmethod 
   def get_src_mac(iface: str) -> str: return net.ifaddresses(iface)[net.AF_LINK][0]["addr"]
