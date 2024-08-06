@@ -40,33 +40,37 @@ class TCPLayer:
   spoof_fields: Optional[set[Literal["sport"]]] = None
   culc_check: Optional[Callable[[bytearray, bytes], int]] = None
 
+  __cached_tcp_hdr = bytearray(byte_size)
+
+  def __post_init__(self): self.pack_hdr(0, self.__cached_tcp_hdr, 0)
+
   def pack_hdr(self, check: int, buf: bytearray, offset: int) -> None:
-    struct.pack_into(self.pack_string, buf, offset, self.tcp_hdr.sport, 
-                    self.tcp_hdr.dport, self.tcp_hdr.seq, self.tcp_hdr.ack_seq, 
+    struct.pack_into(self.pack_string, buf, offset, self.tcp_hdr.sport,
+                    self.tcp_hdr.dport, self.tcp_hdr.seq, self.tcp_hdr.ack_seq,
                     self.tcp_hdr.offset_res, self.tcp_hdr.flags,
                     self.tcp_hdr.window, check, self.tcp_hdr.urg_ptr
     )
-  
+
   def to_buffer(self, buf, offset: int) -> int:
     end_size = offset+self.byte_size
-    if not self.spoof_fields: 
-      if not hasattr(self, "usual_pkt_buf"):
-        src_ip = buf[offset-8:offset-4]
-        self.usual_pkt_buf = bytearray(self.byte_size)
-        self.pack_hdr(0, self.usual_pkt_buf, 0)
-        if self.culc_check: check = self.culc_check(self.usual_pkt_buf, src_ip)
-        else: check = self.tcp_hdr.tcp_check
-        self.pack_hdr(check, self.usual_pkt_buf, 0)
-      buf[offset:end_size] = self.usual_pkt_buf
+    src_ip = buf[offset-8:offset-4]
+
+    if not self.spoof_fields:
+      if self.culc_check and self.__cached_tcp_hdr[self.byte_size-4:self.byte_size-2] == b'\x00\x00':
+        check = self.culc_check(self.__cached_tcp_hdr, src_ip)
+        struct.pack_into("!H", self.__cached_tcp_hdr, self.byte_size-4, check)
+      buf[offset:end_size] = self.__cached_tcp_hdr
       return end_size
-    
+
     for field in self.spoof_fields:
       match field:
-        case "sport": self.tcp_hdr.sport = self.tcp_hdr.sport+1 if self.tcp_hdr.sport < 65535-1 else randrange(65535)
+        case "sport":
+          self.tcp_hdr.sport = self.tcp_hdr.sport+1 if self.tcp_hdr.sport < 65535-1 else randrange(65535)
+          struct.pack_into("!H", self.__cached_tcp_hdr, 0, self.tcp_hdr.sport)
         case _: raise AttributeError(f"{self.tcp_hdr.__class__} hasn't attribute {field}.\nOr spoofing unsupported for this field")
-    self.pack_hdr(0, buf, offset)
+    buf[offset:end_size] = self.__cached_tcp_hdr
     if self.culc_check:
-      src_ip = buf[offset-8:offset-4]
-      check = self.culc_check(buf[offset:end_size], src_ip)
+      # src_ip = buf[offset-8:offset-4]
+      check = self.culc_check(self.__cached_tcp_hdr, src_ip)
       struct.pack_into("!H", buf, end_size-4, check)
     return end_size

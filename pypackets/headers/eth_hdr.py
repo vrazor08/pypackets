@@ -13,17 +13,17 @@ class EthernetHeader:
   dst_mac: bytes
   src_mac: bytes
   ethertype: int = ETHERTYPE_IP
-  
-  @staticmethod 
+
+  @staticmethod
   def get_src_mac(iface: str) -> str: return net.ifaddresses(iface)[net.AF_LINK][0]["addr"]
 
   @staticmethod
-  def get_dst_mac(iface: str) -> str: 
+  def get_dst_mac(iface: str) -> str:
     getway_ip = net.gateways()["default"][net.AF_INET][0]
     return get_mac_address(ip=getway_ip)
 
   @staticmethod
-  def _mac_to_bytes(mac: str) -> bytes: 
+  def _mac_to_bytes(mac: str) -> bytes:
     r"convert mac with : to bytes, example 00:00:00:00:00:00 -> b'\x00\x00\x00\x00\x00\x00'"
     return bytes.fromhex(mac.replace(":", ""))
 
@@ -36,6 +36,11 @@ class EthernetLayer:
   byte_size: int = 14
   pack_string = "!6s6sH"
 
+  __cached_eth_hdr = bytearray(byte_size)
+
+  def __post_init__(self):
+    struct.pack_into(self.pack_string, self.__cached_eth_hdr, 0, self.eth_hdr.dst_mac, self.eth_hdr.src_mac, self.eth_hdr.ethertype)
+
   @staticmethod
   def get_default_interface(dst_ip: str) -> str:
     if ipaddress.IPv4Address(dst_ip).is_loopback:
@@ -45,5 +50,7 @@ class EthernetLayer:
     return net.gateways()["default"][net.AF_INET][1]
 
   def to_buffer(self, buf, offset: int) -> int:
-    struct.pack_into(self.pack_string, buf, offset, self.eth_hdr.dst_mac, self.eth_hdr.src_mac, self.eth_hdr.ethertype)
-    return offset + self.byte_size
+    # struct.pack_into(self.pack_string, buf, offset, self.eth_hdr.dst_mac, self.eth_hdr.src_mac, self.eth_hdr.ethertype)
+    end_size = offset + self.byte_size
+    buf[offset:end_size] = self.__cached_eth_hdr
+    return end_size
