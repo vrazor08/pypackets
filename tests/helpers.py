@@ -35,7 +35,7 @@ def flood_run(count, ip_layer: IPLayer, iface, dport, sock, sport: Optional[int]
   match sock:
     case "inet_raw":
       fd: socket.socket = _create_af_inet_raw_socket()
-      init_pkt: Packet = Packet(ip_layer, tcp, fd_type=sock, pkts_max=1, pkt_len=40, _sorted=True)
+      init_pkt: Packet = Packet(ip_layer, tcp, fd_type=sock, pkts_max=1, pkt_len=40)
       return init_pkt.send_pkts(fd=fd, limit=limit,
                                 dst_ip=socket.inet_ntoa(dst_ip),
                                 dport=dport
@@ -47,7 +47,7 @@ def flood_run(count, ip_layer: IPLayer, iface, dport, sock, sport: Optional[int]
       eth = EthernetLayer(eth_hdr)
       pkts_max = sendmmsg.get_max_sendmmsg_pkts_count()
       send_func_kwargc = {"pkt_size": 54, "iov_max": pkts_max, "fastmmsg": sendmmsg.fast_call}
-      init_pkt: Packet = Packet(eth, ip_layer, tcp, fd_type=sock, pkts_max=pkts_max, _sorted=True)
+      init_pkt: Packet = Packet(eth, ip_layer, tcp, fd_type=sock, pkts_max=pkts_max)
       fd: socket.socket = _create_af_packet_socket(iface)
       return init_pkt.send_pkts(fd=fd, limit=limit, **send_func_kwargc) # type: ignore
     case _: raise ArgumentError(f"Unknown socket type: {sock}")

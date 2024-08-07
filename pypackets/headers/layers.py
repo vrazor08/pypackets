@@ -2,13 +2,13 @@ from enum import IntEnum
 import socket
 
 class Layer(IntEnum):
-  Physical: int = 1
-  DataLink: int = 2
-  Network: int = 3
-  Transport: int = 4
-  Session: int = 5
-  Presentation: int = 6
-  Application: int = 7
+  Physical = 1
+  DataLink = 2
+  Network = 3
+  Transport = 4
+  Session = 5
+  Presentation = 6
+  Application = 7
 
 def _create_af_inet_raw_socket() -> socket.socket:
   raw_socket = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_RAW)

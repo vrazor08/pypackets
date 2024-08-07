@@ -21,7 +21,7 @@ python3 -m pip install git+https://github.com/vrazor08/pypackets.git
 
 ## TODO:
 - [ ] move creating socket functions into sockets.py
-- [ ] add lru cache for Checksum and to_buffer funtions. May be it increase packets creation speed
+- [ ] change `bytearray` for `(ctypes.c_uint8*size)()`
 - [ ] try MSG_ZEROCOPY for sending packets
 - [ ] for inet_raw socket add epoll(selectors), maybe also nonblocking sockets
 - [ ] add packet_mmap socket creation with general tx ring

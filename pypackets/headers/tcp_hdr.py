@@ -1,3 +1,4 @@
+from ctypes import c_uint8, c_uint16, c_uint32
 from dataclasses import dataclass
 from random import randrange
 import socket
@@ -34,7 +35,7 @@ class TCPHeader:
 class TCPLayer:
   tcp_hdr: TCPHeader
 
-  layer = Layer.Transport
+  layer: int = Layer.Transport
   pack_string = "!HHLLBBHHH"
   byte_size: int = 20
   spoof_fields: Optional[set[Literal["sport"]]] = None
@@ -53,10 +54,11 @@ class TCPLayer:
 
   def to_buffer(self, buf, offset: int) -> int:
     end_size = offset+self.byte_size
-    src_ip = buf[offset-8:offset-4]
+
 
     if not self.spoof_fields:
       if self.culc_check and self.__cached_tcp_hdr[self.byte_size-4:self.byte_size-2] == b'\x00\x00':
+        src_ip = buf[offset-8:offset-4]
         check = self.culc_check(self.__cached_tcp_hdr, src_ip)
         struct.pack_into("!H", self.__cached_tcp_hdr, self.byte_size-4, check)
       buf[offset:end_size] = self.__cached_tcp_hdr
@@ -70,7 +72,7 @@ class TCPLayer:
         case _: raise AttributeError(f"{self.tcp_hdr.__class__} hasn't attribute {field}.\nOr spoofing unsupported for this field")
     buf[offset:end_size] = self.__cached_tcp_hdr
     if self.culc_check:
-      # src_ip = buf[offset-8:offset-4]
+      src_ip = buf[offset-8:offset-4]
       check = self.culc_check(self.__cached_tcp_hdr, src_ip)
       struct.pack_into("!H", buf, end_size-4, check)
     return end_size

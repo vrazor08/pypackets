@@ -29,7 +29,7 @@ class IPHeader:
 class IPLayer:
   ip_hdr: IPHeader
 
-  layer = Layer.Network
+  layer: int = Layer.Network
   byte_size: int = 20
   pack_string: str = "!BBHHHBBH4s4s"
   spoof_fields: Optional[set[Literal["_id", "src_ip"]]] = None
@@ -46,13 +46,13 @@ class IPLayer:
                     self.ip_hdr.tot_len, self.ip_hdr._id, self.ip_hdr.frag_off, self.ip_hdr.ttl,
                     self.ip_hdr.proto, check, self.ip_hdr.src_ip, self.ip_hdr.dst_ip
     )
+    if not self.spoof_fields and self.culc_check:
+      check = self.culc_check(self.__cahced_ip_hdr)
+      struct.pack_into("!H", self.__cahced_ip_hdr, self.byte_size-10, check)
 
   def to_buffer(self, buf: bytearray, offset: int) -> int:
     end_size = offset+self.byte_size
     if not self.spoof_fields:
-      if self.culc_check and self.__cahced_ip_hdr[self.byte_size-10:self.byte_size-8] == b'\x00\x00':
-        check = self.culc_check(self.__cahced_ip_hdr)
-        struct.pack_into("!H", self.__cahced_ip_hdr, self.byte_size-10, check)
       buf[offset:end_size] = self.__cahced_ip_hdr
       return end_size
     for field in self.spoof_fields:
@@ -60,9 +60,7 @@ class IPLayer:
         case "_id":
           self.ip_hdr._id = self.ip_hdr._id + 1 if self.ip_hdr._id < 65535 else randrange(65535)
           struct.pack_into("!H", self.__cahced_ip_hdr, 4, self.ip_hdr._id)
-        case "src_ip":
-          self.ip_hdr.src_ip = struct.pack("!I", getrandbits(32))
-          struct.pack_into("!4s", self.__cahced_ip_hdr, self.byte_size-8, self.ip_hdr.src_ip)
+        case "src_ip": struct.pack_into("!I", self.__cahced_ip_hdr, self.byte_size-8, getrandbits(32))
         case _: raise AttributeError(f"{self.ip_hdr.__class__} hasn't attribute {field}.\nOr spoofing unsupported for this field")
     buf[offset:end_size] = self.__cahced_ip_hdr
     if self.culc_check:

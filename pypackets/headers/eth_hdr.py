@@ -32,7 +32,7 @@ class EthernetHeader:
 class EthernetLayer:
   eth_hdr: EthernetHeader
 
-  layer = Layer.DataLink
+  layer: int = Layer.DataLink
   byte_size: int = 14
   pack_string = "!6s6sH"
 

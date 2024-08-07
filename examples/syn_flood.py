@@ -70,7 +70,6 @@ class CLI:
         ip_hdr = IPHeader(dst_ip=socket.inet_aton(dst_ip), src_ip=socket.inet_aton(_ip))
         ip = IPLayer(ip_hdr)
 
-
     limits = [cli_args.count, cli_args.by_time, cli_args.forever]
     if limits.count(None) != len(limits)-1 and not cli_args.bench: raise Exception("Invalid arguments must be set only one from -c -f -t")
     limit = Limitation(*limits)
@@ -80,7 +79,7 @@ class CLI:
         fd: socket.socket = _create_af_inet_raw_socket()
         ip.ip_hdr.tot_len = 40
         tcp: TCPLayer = self._create_tcp_pkt(dport, sport, checksum.tcp_checksum_buf)
-        init_pkt: Packet = Packet(ip, tcp, fd_type=cli_args.socket, pkts_max=1, pkt_len=40, _sorted=True)
+        init_pkt: Packet = Packet(ip, tcp, fd_type=cli_args.socket, pkts_max=1, pkt_len=40)
         if cli_args.bench:
           str_table = bench_test(cli_args.bench, self.BenchMulStep, 54, func=init_pkt.send_pkts,
                                 fd=fd,
@@ -109,7 +108,7 @@ class CLI:
         tcp: TCPLayer = self._create_tcp_pkt(dport, sport, checksum.tcp_checksum_buf)
         send_func = _send_af_packet
         send_func_kwargc = {"pkt_size": 54, "iov_max": pkts_max, "fastmmsg": sendmmsg.fast_call}
-        init_pkt: Packet = Packet(eth, ip, tcp, fd_type=cli_args.socket, pkts_max=pkts_max, _sorted=True)
+        init_pkt: Packet = Packet(eth, ip, tcp, fd_type=cli_args.socket, pkts_max=pkts_max)
         fd: socket.socket = _create_af_packet_socket(iface)
         if cli_args.bench:
           str_table = bench_test(cli_args.bench, self.BenchMulStep, 54, func=init_pkt.send_pkts,

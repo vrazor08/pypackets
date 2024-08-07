@@ -1,6 +1,6 @@
 from enum import IntEnum
 from socket import socket
-from typing import Callable, Optional, Protocol
+from typing import Callable, Concatenate, Optional, Protocol, ParamSpec
 import time
 
 from pypackets.send_pkt import _send_af_packet, _send_inet_raw
@@ -10,7 +10,8 @@ class HasLayerField(Protocol):
   layer: int
   def to_buffer(self, buf: bytearray, offset: int) -> int: ...
 
-SendFunc = Callable[[socket, bytearray], int]
+P = ParamSpec('P')
+SendFunc = Callable[Concatenate[socket, bytearray, P], int]
 
 class SendMode(IntEnum):
   ByOnePacket=1
@@ -24,10 +25,8 @@ SockDefaultSendFuncs = {
 }
 
 class Packet:
-  def __init__(self, *headers: HasLayerField, fd_type: str, pkts_max: int = 1024, pkt_len: int = 54, _sorted: bool = False):
-    self._sorted = _sorted
+  def __init__(self, *headers: HasLayerField, fd_type: str, pkts_max: int = 1024, pkt_len: int = 54):
     self.headers = list(headers)
-    if not self._sorted: self.headers.sort(key=lambda x: x.layer)
     self.pkts_max = pkts_max
     self.pkt_len = pkt_len
     self.fd_type = fd_type # TODO: get this value by fd
@@ -60,11 +59,9 @@ class Packet:
     if not send_mode: send_mode = SockDefaultSendFuncs[self.fd_type][1]
 
     if limit.count:
-      if send_mode == SendMode.ByManyPackets:
-        return send_func(fd, self._create_pkts_buf(limit.count), **kwargc) # type: ignore
+      if send_mode == SendMode.ByManyPackets: return send_func(fd, self._create_pkts_buf(limit.count), **kwargc) # type: ignore
       s = 0
-      for i in range(limit.count):
-        s += send_func(fd, self._create_pkts_buf(self.pkts_max), **kwargc) # type: ignore
+      for i in range(limit.count): s += send_func(fd, self._create_pkts_buf(self.pkts_max), **kwargc) # type: ignore
       return s
     elif limit.by_time:
       s = 0
