@@ -1,4 +1,3 @@
-from ctypes import c_uint8, c_uint16, c_uint32
 from dataclasses import dataclass
 from random import randrange
 import socket
@@ -54,7 +53,6 @@ class TCPLayer:
 
   def to_buffer(self, buf, offset: int) -> int:
     end_size = offset+self.byte_size
-
 
     if not self.spoof_fields:
       if self.culc_check and self.__cached_tcp_hdr[self.byte_size-4:self.byte_size-2] == b'\x00\x00':

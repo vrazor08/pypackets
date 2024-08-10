@@ -20,7 +20,7 @@ class EthernetHeader:
   @staticmethod
   def get_dst_mac(iface: str) -> str:
     getway_ip = net.gateways()["default"][net.AF_INET][0]
-    return get_mac_address(ip=getway_ip)
+    return get_mac_address(ip=getway_ip) # type: ignore
 
   @staticmethod
   def _mac_to_bytes(mac: str) -> bytes:
