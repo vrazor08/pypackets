@@ -2,12 +2,11 @@ import argparse
 import socket
 import sys
 
-from pypackets.packets import Packet, Limitation, SendMode
+from pypackets.packets import Packet, Limitation
 from pypackets.headers.eth_hdr import EthernetHeader, EthernetLayer
 from pypackets.headers.ip_hdr import IPHeader, IPLayer
 from pypackets.headers.tcp_hdr import TCPHeader, TCPLayer
 from pypackets.headers.layers import _create_af_inet_raw_socket, _create_af_packet_socket
-from pypackets.send_pkt import _send_af_packet, _send_inet_raw
 from pypackets.checksum import Checksum
 from pypackets.benchmark.benchmark import bench_test
 
@@ -81,19 +80,11 @@ class CLI:
         tcp: TCPLayer = self._create_tcp_pkt(dport, sport, checksum.tcp_checksum_buf)
         init_pkt: Packet = Packet(ip, tcp, fd_type=cli_args.socket, pkts_max=1, pkt_len=40)
         if cli_args.bench:
-          str_table = bench_test(cli_args.bench, self.BenchMulStep, 54, func=init_pkt.send_pkts,
-                                fd=fd,
-                                send_func=_send_inet_raw,
-                                dst_ip=dst_ip, dport=dport
-          )
+          str_table = bench_test(cli_args.bench, self.BenchMulStep, 54, func=init_pkt.send_pkts, fd=fd, dst_ip=dst_ip, dport=dport)
           print(str_table)
           fd.close()
           return -1
-        return init_pkt.send_pkts(fd=fd, limit=limit,
-                                  send_func=_send_inet_raw,
-                                  send_mode=SendMode.ByOnePacket, dst_ip=dst_ip,
-                                  dport=dport
-        )
+        return init_pkt.send_pkts(fd=fd, limit=limit, dst_ip=dst_ip, dport=dport)
       case "packet_raw":
         checksum = Checksum(socket.inet_aton(dst_ip))
         src_mac, dst_mac = EthernetHeader.get_src_mac(iface), EthernetHeader.get_dst_mac(iface)
@@ -106,26 +97,17 @@ class CLI:
         ip.ip_hdr.tot_len = 40 # TODO: compute it
         ip.culc_check = checksum.ip_checksum_buf
         tcp: TCPLayer = self._create_tcp_pkt(dport, sport, checksum.tcp_checksum_buf)
-        send_func = _send_af_packet
-        send_func_kwargc = {"pkt_size": 54, "iov_max": pkts_max, "fastmmsg": sendmmsg.fast_call}
         init_pkt: Packet = Packet(eth, ip, tcp, fd_type=cli_args.socket, pkts_max=pkts_max)
         fd: socket.socket = _create_af_packet_socket(iface)
         if cli_args.bench:
-          str_table = bench_test(cli_args.bench, self.BenchMulStep, 54, func=init_pkt.send_pkts,
-                                fd=fd, send_func=send_func, **send_func_kwargc
-          )
+          str_table = bench_test(cli_args.bench, self.BenchMulStep, 54, func=init_pkt.send_pkts, fd=fd, sendmmsg=sendmmsg.fast_call)
           print(str_table)
           fd.close()
           return -1
-        sent_pkts = init_pkt.send_pkts(fd=fd, limit=limit,
-                                      send_func=send_func,
-                                      send_mode=SendMode.ByManyPackets,
-                                      **send_func_kwargc
-        )
+        sent_pkts = init_pkt.send_pkts(fd=fd, limit=limit, sendmmsg=sendmmsg.fast_call)
       case _: raise Exception("Socket type not found")
     fd.close()
     return sent_pkts
-
 
 def main():
   cli = CLI()

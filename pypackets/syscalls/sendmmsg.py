@@ -19,22 +19,22 @@ class SendMmsg:
     sendmmsg_lib = CDLL(self.sendmmsg_lib_path)
     errno_restype(sendmmsg_lib)
     self.sendmmsg_lib = sendmmsg_lib
-    self.sendmmsg_lib.write_batch.argtypes = [c_int, c_void_p, c_int, c_uint]
+    self.sendmmsg_lib.write_batch.argtypes = [c_int, c_void_p, c_int, c_uint, c_int]
     self.sendmmsg_lib.write_batch.restype = c_int
 
   @staticmethod
   def from_mv(mv:memoryview, to_type=ctypes.c_char):
     return ctypes.cast(ctypes.addressof(to_type.from_buffer(mv)), ctypes.POINTER(to_type * len(mv))).contents
-  
+
   def get_max_sendmmsg_pkts_count(self) -> int:
     return self.sendmmsg_lib.get_iov_max()
-    
-  def fast_call(self, fd: socket.socket, buf: bytearray, pkt_size: int):
+
+  def fast_call(self, fd: socket.socket, buf: bytearray, pkt_size: int, flags: int = 0) -> int:
     """buf is buffer of packets. New packet must start with pkt_size step"""
     pkts_count = len(buf) // pkt_size
     # buf_2d = buf.cast("B", shape=[pkts_count, pkt_size])
     c_pkt_array = (c_void_p*pkts_count).from_buffer(buf)
-    pkt_sent = self.sendmmsg_lib.write_batch(fd.fileno(), c_pkt_array, pkts_count, pkt_size)
+    pkt_sent: int = self.sendmmsg_lib.write_batch(fd.fileno(), c_pkt_array, pkts_count, pkt_size, flags)
     err_code = get_errno(self.sendmmsg_lib)
     if err_code != 0: raise ErrnoException(err_code)
     return pkt_sent

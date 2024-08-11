@@ -45,11 +45,9 @@ def flood_run(count, ip_layer: IPLayer, iface, dport, sock, sport: Optional[int]
       src_mac, dst_mac = EthernetHeader.get_src_mac(iface), EthernetHeader.get_dst_mac(iface)
       eth_hdr: EthernetHeader = EthernetHeader(EthernetHeader._mac_to_bytes(dst_mac), EthernetHeader._mac_to_bytes(src_mac))
       eth = EthernetLayer(eth_hdr)
-      pkts_max = sendmmsg.get_max_sendmmsg_pkts_count()
-      send_func_kwargc = {"pkt_size": 54, "iov_max": pkts_max, "fastmmsg": sendmmsg.fast_call}
-      init_pkt: Packet = Packet(eth, ip_layer, tcp, fd_type=sock, pkts_max=pkts_max)
+      init_pkt: Packet = Packet(eth, ip_layer, tcp, fd_type=sock, pkts_max=sendmmsg.get_max_sendmmsg_pkts_count())
       fd: socket.socket = _create_af_packet_socket(iface)
-      return init_pkt.send_pkts(fd=fd, limit=limit, **send_func_kwargc) # type: ignore
+      return init_pkt.send_pkts(fd=fd, limit=limit, sendmmsg=sendmmsg.fast_call) # type: ignore
     case _: raise ArgumentError(f"Unknown socket type: {sock}")
 
 

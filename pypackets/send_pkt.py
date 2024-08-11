@@ -1,14 +1,14 @@
 import socket
 
-def _send_af_packet(fd: socket.socket, buf: bytearray, pkt_size: int, fastmmsg, iov_max: int = 1024) -> int:
+def _send_af_packet(fd: socket.socket, buf: bytearray, pkt_size: int, sendmmsg, iov_max: int = 1024, flags: int = 0) -> int:
   pkt_sent = 0
   pkts_count = len(buf) // pkt_size
   iterations = pkts_count // iov_max
-  if iov_max >= pkts_count: return fastmmsg(fd, buf, pkt_size)
+  if iov_max >= pkts_count or flags: return sendmmsg(fd, buf, pkt_size, flags)
   for i in range(iterations):
-    pkt_sent += fastmmsg(fd, buf[i*iov_max*pkt_size:(i+1)*iov_max*pkt_size], pkt_size)
+    pkt_sent += sendmmsg(fd, buf[i*iov_max*pkt_size:(i+1)*iov_max*pkt_size], pkt_size)
   end = (pkts_count) - (iterations*iov_max)
-  if end > 0: pkt_sent += fastmmsg(fd, buf[iterations*iov_max*pkt_size:], pkt_size)
+  if end > 0: pkt_sent += sendmmsg(fd, buf[iterations*iov_max*pkt_size:], pkt_size)
   return pkt_sent
 
 def _send_inet_raw(fd: socket.socket, pkt: bytearray, dst_ip: str, dport: int):
