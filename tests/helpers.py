@@ -11,7 +11,7 @@ from pypackets.headers.eth_hdr import EthernetHeader, EthernetLayer
 from pypackets.headers.ip_hdr import IPLayer
 from pypackets.headers.tcp_hdr import TCPHeader, TCPLayer
 from pypackets.headers.layers import _create_af_inet_raw_socket, _create_af_packet_socket
-from pypackets.checksum import Checksum
+from pypackets.checksum import TCPChecksum
 from pypackets.syscalls.sendmmsg import SendMmsg
 from pypackets.benchmark.benchmark import Limitation
 
@@ -28,10 +28,10 @@ def flood_run(count, ip_layer: IPLayer, iface, dport, sock, sport: Optional[int]
   if not iface: iface = EthernetLayer.get_default_interface(socket.inet_ntoa(dst_ip))
   else: iface = iface
   limit = Limitation(count=count)
-  checksum = Checksum(dst_ip)
+  tcp_checksum = TCPChecksum(dst_ip, 20)
   tcp_spoof_fields = {"sport"} if not sport else None
   tcp: TCPLayer = TCPLayer(TCPHeader(12345, dport), spoof_fields=tcp_spoof_fields, # type: ignore
-                          culc_check=checksum.tcp_checksum_buf)
+                          culc_check=tcp_checksum.tcp_checksum_buf)
   match sock:
     case "inet_raw":
       fd: socket.socket = _create_af_inet_raw_socket()

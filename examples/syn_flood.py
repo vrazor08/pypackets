@@ -7,7 +7,7 @@ from pypackets.headers.eth_hdr import EthernetHeader, EthernetLayer
 from pypackets.headers.ip_hdr import IPHeader, IPLayer
 from pypackets.headers.tcp_hdr import TCPHeader, TCPLayer
 from pypackets.headers.layers import _create_af_inet_raw_socket, _create_af_packet_socket
-from pypackets.checksum import Checksum
+from pypackets.checksum import IPChecksum, TCPChecksum
 from pypackets.benchmark.benchmark import bench_test
 
 from pypackets.syscalls.sendmmsg import SendMmsg
@@ -74,7 +74,7 @@ class CLI:
     limit = Limitation(*limits)
     match cli_args.socket:
       case "inet_raw":
-        checksum = Checksum(socket.inet_aton(dst_ip))
+        checksum = TCPChecksum(socket.inet_aton(dst_ip), 20)
         fd: socket.socket = _create_af_inet_raw_socket()
         ip.ip_hdr.tot_len = 40
         tcp: TCPLayer = self._create_tcp_pkt(dport, sport, checksum.tcp_checksum_buf)
@@ -86,7 +86,8 @@ class CLI:
           return -1
         return init_pkt.send_pkts(fd=fd, limit=limit, dst_ip=dst_ip, dport=dport)
       case "packet_raw":
-        checksum = Checksum(socket.inet_aton(dst_ip))
+        ip_checksum = IPChecksum(socket.inet_aton(dst_ip))
+        tcp_checksum = TCPChecksum(socket.inet_aton(dst_ip), 20)
         src_mac, dst_mac = EthernetHeader.get_src_mac(iface), EthernetHeader.get_dst_mac(iface)
         print(f"\033[93;1mWarning: use interface: {iface}. src_mac: {src_mac}, dst_mac: {dst_mac}\033[0m", file=sys.stderr)
         eth_hdr: EthernetHeader = EthernetHeader(EthernetHeader._mac_to_bytes(dst_mac), EthernetHeader._mac_to_bytes(src_mac))
@@ -95,8 +96,8 @@ class CLI:
         print(f"DEBUG: UIO_MAXIOV = {pkts_max}", file=sys.stderr)
 
         ip.ip_hdr.tot_len = 40 # TODO: compute it
-        ip.culc_check = checksum.ip_checksum_buf
-        tcp: TCPLayer = self._create_tcp_pkt(dport, sport, checksum.tcp_checksum_buf)
+        ip.culc_check = ip_checksum.ip_checksum_buf
+        tcp: TCPLayer = self._create_tcp_pkt(dport, sport, tcp_checksum.tcp_checksum_buf)
         init_pkt: Packet = Packet(eth, ip, tcp, fd_type=cli_args.socket, pkts_max=pkts_max)
         fd: socket.socket = _create_af_packet_socket(iface)
         if cli_args.bench:
